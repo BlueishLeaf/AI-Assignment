@@ -3,14 +3,16 @@
 connected_to(c0, [cs1, c133]).
 
 % Right Branch
-connected_to(cs1, [c101, lab1]). % TODO: Add lab1
-connected_to(c101, [r101, c103]). % TODO: Add lab1
+connected_to(cs1, [c101, lab1]).
+%connected_to(cs1, [c101]).
+connected_to(c101, [r101, c103]).
 connected_to(r101, []).
-connected_to(c103, [r103, c105, lab2]). % TODO: Add lab2
+connected_to(c103, [r103, c105, lab2]).
+%connected_to(c103, [r103, c105]).
 connected_to(r103, []).
 connected_to(c105, [r105, c107]).
 connected_to(r105, []).
-connected_to(c107, [r107, c109]). % TODO: Add lab2
+connected_to(c107, [r107, c109]).
 connected_to(r107, []).
 connected_to(c109, [r109, c113, c111]).
 connected_to(r109, []).
@@ -28,13 +30,15 @@ connected_to(c133, [c132]).
 connected_to(c132, [c131]).
 connected_to(c131, [r131, c129]).
 connected_to(r131, []).
-connected_to(c129, [r129, c127]). % TODO: Add lab4
+connected_to(c129, [r129, c127]).
 connected_to(r129, []).
 connected_to(c127, [r127, c125]).
 connected_to(r127, []).
-connected_to(c125, [r125, c123, lab4]). % TODO: Add lab4
+connected_to(c125, [r125, c123, lab4]).
+%connected_to(c125, [r125, c123]).
 connected_to(r125, []).
-connected_to(c123, [r123, c121, lab3]). % TODO: Add lab3
+connected_to(c123, [r123, c121, lab3]).
+%connected_to(c123, [r123, c121]).
 connected_to(r123, []).
 connected_to(c121, [r121, c119]).
 connected_to(r121, []).
@@ -46,9 +50,10 @@ connected_to(c118, [cc118, c119]).
 connected_to(cc118, [canteen]).
 connected_to(canteen, []).
 
-% No clue what to do with labs lool
+% Labs connect depending on what way their doors open
 connected_to(lab1, [c101, lab2]).
-connected_to(lab2, [c107, lab3]).
+%connected_to(lab1, [c101]).
+connected_to(lab2, [c107, lab3, lab1]).
 connected_to(lab3, [lab2]).
 connected_to(lab4, [c129, lab1]).
 
@@ -63,7 +68,7 @@ has_door(A, B, C) :-
 door(c101, r101, locked).
 door(c131, r131, locked).
 
-% cost is all sorts of fucked up
+% cost(A, B, C) is true if there is a cost of C between A and B
 cost(A, B, C) :-
     has_door(A, B, open),
     cost(move, C).
