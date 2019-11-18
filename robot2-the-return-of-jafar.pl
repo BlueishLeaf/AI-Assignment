@@ -14,28 +14,25 @@ robot(c0, 150, []).
 pick_up(Object) :-
   robot(Location, _, _),
   item(Object, Location),
-  !,
   retract(item(Object, Location)),
   retract(robot(L,P,I)),
   assert(robot(L,P,[Object|I])).
 
 unlock_door(A, B) :-
   robot(A, _, _),
-  connected_to(A, B),
-  !,
-  has_locked_door(A, B),
-  retract(door(A, B, locked)),
+  connected(A, B),
+  connection(A, B, locked),
+  retract(connection(A, B, locked)),
   retract(robot(L, P, I)),
   assert(robot(L, P - 2, I)),
-  assert(door(A, B, closed)).
+  assert(connection(A, B, closed)).
 
 open_door(A, B) :-
   robot(A, _, _),
-  connected_to(A, B),
-  !,
-  has_closed_door(A, B),
-  retract(door(A, B, closed)),
-  assert(door(A, B, open)).
+  connected(A, B),
+  connection(A, B, closed),
+  retract(connection(A, B, closed)),
+  assert(connection(A, B, open)).
 
 move(A, B) :-
   can_move(A, B),
@@ -44,10 +41,8 @@ move(A, B) :-
 
 can_move(A, B) :-
   robot(A, _, _),
-  connected_to(A, B),
-  !,
-  \+has_locked_door(A, B),
-  \+has_closed_door(A, B).
+  connected(A, B),
+  connection(A, B, open),
 
 item(key, r117).
 item(coffee, canteen).
@@ -102,49 +97,59 @@ connection(c129, r129, locked).
 connection(c131, r131, locked).
 connection(cc118, canteen, locked).
 
-connected(A, B) :- connection(A, B, _) ; connection(B, A, _).
+connected(A, B) :- connection(A, B, _).
+connected(A, B) :- connection(B, A, _).
 
-% DEPTH FIRST SEARCH
-% depth_first(A, B, P).
-% A is the starting Node.
-% B is the goal Node.
-% P is the path from A to B.
-depth_first(A, B, P) :-
-    dfs(A, B, [A], Q),
-   	reverse(Q, P).
+cost(open, 1).
+cost(closed, 3).
+cost(locked, 5). % 2 to unlock plus 3 to open
+cost(A, B, C) :-
+  connection(A, B, DS), % Get door state to determine cost of node
+  cost(DS, C).
 
-dfs(A, B, P, [B|P]) :-
-    connected(A, B).
+%--------------------------------------------------------------%
+%   Uniform Cost Search                                        %
+%   call: uni_cost(+[[Start]],+Goal,-Path,-ExploredNodes).     %
+%--------------------------------------------------------------%
+uni_cost([[Goal|Path]|_],Goal,[Goal|Path],0).
+uni_cost([Path|Queue],Goal,FinalPath,N) :- 
+  extend(Path,NewPaths),
+  append(Queue,NewPaths,Queue1), 
+  sort_queue(Queue1,NewQueue),
+  uni_cost(NewQueue,Goal,FinalPath,M),
+  N is M+1.
 
-dfs(A, B, V, P) :-
-    connected(A, C),
-    C \== B,
-    \+ member(C, V),
-    dfs(C, B, [C|V], P).
+sort_queue(L,L2) :-
+  swap(L,L1), !,
+  sort_queue(L1,L2).
+sort_queue(L,L).
 
-% BREADTH FIRST SEARCH
-% breadth_first(A, B, P).
-% A is the starting Node.
-% B is the goal Node.
-% P is the path from A to B.
-breadth_first(A, B, P) :-
-    bfs(B,[node(A,[])],[], Q),
-    reverse(Q, P).
+swap([X,Y|T],[Y,X|T]) :-
+  reverse_path_cost(X,CX),
+  reverse_path_cost(Y,CY),
+  CX>CY.
+swap([X|T],[X|V]) :-
+  swap(T,V).
 
-bfs(B, [node(B, P)|_], _, P).
+path_cost([A,B],Cost) :-
+  cost(A,B,Cost).
+path_cost([A,B|T],Cost) :-
+  cost(A,B,Cost1),
+  path_cost([B|T],Cost2),
+  Cost is Cost1+Cost2.
 
-% Ns is visited nodes
-% Es is ???
-% yeet the rich idk
-bfs(B, [node(S, P1)|Ns], C, P) :-
-    length(P1, L), % Length of the node path list
-    findall(node(S1, [connected(S, S1)|P1]),
-            (connected(S, S1),
-            \+ (member(node(S1, P2), Ns), length(P2, L)),
-            \+ member(S1, C)),
-            Es),
-    append(Ns, Es, O),
-    bfs(B, O, [S|C], P). 
+reverse_path_cost([A,B],Cost) :-
+  cost(B,A,Cost).
+reverse_path_cost([A,B|T],Cost) :-
+  cost(B,A,Cost1),
+  reverse_path_cost([B|T],Cost2),
+  Cost is Cost1+Cost2.
+
+extend([Node|Path],NewPaths) :-
+  findall([NewNode,Node|Path],
+    (connection(Node,NewNode,_), 
+    \+ member(NewNode,Path)),
+    NewPaths).
 
 % writeln(L) is true if L is a list of items to be written on a line, followed by a newline.
 writeln(L) :- writel(L),nl.
