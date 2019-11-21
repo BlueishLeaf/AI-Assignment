@@ -101,7 +101,7 @@ is_connected(A, B) :- connected_to(B, A, _).
 
 cost(open, 1).
 cost(closed, 3).
-cost(locked, 5). % 2 to unlock plus 3 to open
+cost(locked, 6). % 2 to unlock plus 3 to open plus 1 to move
 cost_of(A, B, Cost) :-
   connected_to(A, B, DoorState),
   cost(DoorState, Cost).
