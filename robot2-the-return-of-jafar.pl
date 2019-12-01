@@ -269,35 +269,45 @@ connection(A, B, DS) :- connected_to(A, B, DS).
 connection(A, B, DS) :- connected_to(B, A, DS).
 
 % Uniform cost search implementation
-uni_cost([[Goal|Path]|_],Goal,[Goal|Path],0).
-uni_cost([Path|Queue],Goal,FinalPath,N) :- 
-  extend(Path,NewPaths),
-  append(Queue,NewPaths,Queue1), 
-  sort_queue(Queue1,NewQueue),
-  uni_cost(NewQueue,Goal,FinalPath,M),
-  N is M+1.
+uni_cost([[Goal|Path]|_], Goal, [Goal|Path], 0).
+uni_cost([Path|Queue], Goal, FinalPath, N) :- 
+  extend(Path, NewPaths),
+  append(Queue, NewPaths, Queue1), 
+  sort_queue(Queue1, NewQueue),
+  uni_cost(NewQueue, Goal, FinalPath, M),
+  N is M + 1.
 
-sort_queue(L,L2) :-
-  swap(L,L1), !,
-  sort_queue(L1,L2).
-sort_queue(L,L).
+sort_queue(L, L2) :-
+  swap(L, L1), !,
+  sort_queue(L1, L2).
+sort_queue(L, L).
 
-swap([X,Y|T],[Y,X|T]) :-
-  reverse_path_cost(X,CX),
-  reverse_path_cost(Y,CY),
-  CX>CY.
+swap([X, Y|T],[Y, X|T]) :-
+  reverse_path_cost(X, CX),
+  reverse_path_cost(Y, CY),
+  CX > CY.
 swap([X|T],[X|V]) :-
-  swap(T,V).
+  swap(T, V).
 
-reverse_path_cost([A,B],Cost) :-
-  cost_of(A,B,Cost).
-reverse_path_cost([A,B|T],Cost) :-
-  cost_of(A,B,Cost1),
-  reverse_path_cost([B|T],Cost2),
-  Cost is Cost1+Cost2.
+reverse_path_cost([A, B], Cost) :-
+  cost_of(A, B, Cost).
+reverse_path_cost([A,B|T], Cost) :-
+  cost_of(A, B, Cost1),
+  reverse_path_cost([B|T], Cost2),
+  Cost is Cost1 + Cost2.
 
-extend([Node|Path],NewPaths) :-
-  findall([NewNode,Node|Path],
-    (connection(Node,NewNode, _),
-    \+ member(NewNode,Path)),
+% With the key, the search algorithm will consider all connections when building a path
+extend([Node|Path], NewPaths) :-
+  is_holding(key),
+  findall([NewNode, Node|Path],
+    (connection(Node, NewNode, _),
+    \+ member(NewNode, Path)),
+    NewPaths).
+
+% Without the key, the search algorithm will only consider connections that are open or closed
+extend([Node|Path], NewPaths) :-
+  \+ is_holding(key),
+  findall([NewNode, Node|Path],
+    ((connection(Node, NewNode, open); connection(Node, NewNode, closed)),
+    \+ member(NewNode, Path)),
     NewPaths).
