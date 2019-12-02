@@ -1,9 +1,12 @@
-% DYNAMIC PREDICATES
+% Killian Kelly - S00170465 - Hons Computing
+% Link to video: 
+
+% DYNAMIC FACTS
 :- dynamic item/2.
 :- dynamic robot/3.
 :- dynamic connected_to/3.
 
-% ENTRY POINT FOR FINDING SOLUTIONS
+% QUERY THIS TO FIND SOLUTIONS
 % To deliver coffee to r101, try "?- resolve_goals([deliver(coffee, r101)])."
 % You can also give it a series of tasks, such as "?- resolve_goals([deliver(coffee, r101), deliver(key, lab3)])."
 resolve_goals([]).
@@ -12,7 +15,7 @@ resolve_goals([Goal|Rest]) :-
   Goal,
   resolve_goals(Rest).
 
-resolve_path([]).
+% Gets the optimal path using uni cost search and traverses it
 resolve_path(Goal) :-
   format("Current goal is: ~w \n", [Goal]),
   robot(L, _, _),
@@ -23,7 +26,6 @@ resolve_path(Goal) :-
   traverse(Reverse),
   format("Arrived at goal: ~a \n", [Goal]).
 
-% ROBOT
 % robot(L, P, [I]).
 % L is the robot's location
 % P is the robot's remaining power
@@ -118,6 +120,7 @@ move(A, B) :-
   assert(robot(B, NewP, I)).
 
 % Find and transport a desired item to a given location
+% 1. Delivery destination locked, key not in inventory
 deliver(Item, Location) :-
   item(Item, ItemLocation),
   key_required(Location),
@@ -130,10 +133,12 @@ deliver(Item, Location) :-
   resolve_path(Location),
   drop(Item),
   format("The ~a was successfully delivered to ~a \n", [Item, Location]).
+% 2. Item destination locked, key not in inventory
 deliver(Item, Location) :-
   item(Item, ItemLocation),
-  key_required(Location),
-  format("The delivery destination is locked. The key is required. \n"),
+  key_required(ItemLocation),
+  format("ItemLocation = ~a. \n", [ItemLocation]),
+  format("The item destination is locked. The key is required. \n"),
   item(key, KeyLocation),
   resolve_path(KeyLocation),
   pick_up(key),
@@ -142,6 +147,7 @@ deliver(Item, Location) :-
   resolve_path(Location),
   drop(Item),
   format("The ~a was successfully delivered to ~a \n", [Item, Location]).
+% 3. Item not in inventory, key not required.
 deliver(Item, Location) :-
   item(Item, ItemLocation),
   format("Key is not required for this delivery. \n"),
@@ -150,6 +156,7 @@ deliver(Item, Location) :-
   resolve_path(Location),
   drop(Item),
   format("The ~a was successfully delivered to ~a \n", [Item, Location]).
+% 4. Item already in inventory, key required but not in inventory.
 deliver(Item, Location) :-
   is_holding(Item),
   key_required(Location),
@@ -161,6 +168,7 @@ deliver(Item, Location) :-
   resolve_path(Location),
   drop(Item),
   format("The ~a was successfully delivered to ~a \n", [Item, Location]).
+% 5. Item already in inventory, key not required.
 deliver(Item, Location) :-
   is_holding(Item),
   format("The ~a is already in the inventory. \n", [Item]),
